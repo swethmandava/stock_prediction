@@ -30,13 +30,14 @@ def train(train_x, valid_x, train_y, valid_y):
 
 
 	pred = bst.predict(dvalid)
-	df_pred = pd.DataFrame(columns=['data', 'predict', 'target'])
+	df_pred = pd.DataFrame(columns=['data', 'predict', 'target', 'square_error'])
 	df_pred['data'] = valid_x
 	df_pred['predict'] = pred
 	df_pred['target'] = valid_y
-
-	df_errors = df_pred.loc[df_pred['predict'] != df_pred['target']]
-	df_errors.to_csv("../stock_data/boosting_results/errors.csv", index=False)
+	error = (pred - valid_y)
+	error = np.multiply(error, error)
+	df_pred['square_error'] = error
+	print "Average Validation Error is", np.sum(error)*1.0/error.size
 
 	bst.plot_importance(bst) #plots histogram showing importance of features
 	bst.plot_tree(bst, num_trees=5) #plots 2 trees
