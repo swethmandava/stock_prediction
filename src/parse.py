@@ -42,10 +42,11 @@ def get_dataset(filename):
     # data(OHLC), y(open of the next day), headers(data labels)
     return dataset[:-1], dataset[1:, 0], header[1:]
 
-# filename = 'btc_data/coinbaseUSD_1-min_data_2014-12-01_to_2017-10-20.csv.csv'
-filename = 'stock_data/Stocks/aple.us.txt'
-data, y, headers = get_dataset(filename)
+if __name__ == '__main__':
+    # filename = 'btc_data/coinbaseUSD_1-min_data_2014-12-01_to_2017-10-20.csv.csv'
+    filename = 'stock_data/Stocks/aple.us.txt'
+    data, y, headers = get_dataset(filename)
 
-print headers
-print y[0]
-print data[0]
+    print headers
+    print y[0]
+    print data[0]
