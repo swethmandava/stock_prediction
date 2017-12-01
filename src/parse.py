@@ -4,13 +4,16 @@ import subprocess
 import signal
 import sys
 import numpy as np
+from collections import deque
 
 current_path = os.getcwd()
 
 class DataStreaming:
-    def __init__(self, seed, reader):
+    def __init__(self, seed, reader, predict_dist):
         self.reader = reader
-        self.last = seed
+        # print seed
+        self.last = deque(seed.tolist())
+        self.predict_dist = predict_dist
 
     def __iter__(self):
         return self
@@ -20,15 +23,15 @@ class DataStreaming:
         data = np.zeros(len(n)-1, dtype='float64')
         for i, f in enumerate(n[1:]):
             data[i] = f
-        current = self.last
-        self.last = data
+        current = self.last.popleft()
+        self.last.append(data)
         return current, data[0]
 
 def signal_handler(signal, frame):
     os.chdir(current_path)
     sys.exit(0)
 
-def get_data(filename, initial_size=200):
+def get_data(filename, initial_size=200, predict_dist=1):
     # Go to the root of the git repository
     root = subprocess.check_output("git rev-parse --show-toplevel", shell=True).rstrip()
     os.chdir(root)
@@ -48,26 +51,33 @@ def get_data(filename, initial_size=200):
         if x >= initial_size:
             if x <= 0:
                 raise ValueError('File should contain more data')
-            stream = DataStreaming(dataset[x-1], reader)
+            stream = DataStreaming(dataset[x-predict_dist:], reader, predict_dist=predict_dist)
             break;
 
         for y, item in enumerate(row):
             if y == 0:
-                continue;
-            dataset[x, y-1] = item
+                continue
+            try:
+                float(item)
+                dataset[x, y-1] = (item)
+            except ValueError:
+                continue
 
 
     os.chdir(current_path)
-    # data(OHLC), y(open of the next day), headers(data labels)
-    return dataset[:-1], dataset[1:, 0], stream, header[1:]
+    # data(OHLC), y(open of the day predict_dist later), headers(data labels)
+    return dataset[:-predict_dist], dataset[predict_dist:, 0], stream, header[1:]
 
 if __name__ == '__main__':
     # filename = 'btc_data/coinbaseUSD_1-min_data_2014-12-01_to_2017-10-20.csv.csv'
-    filename = 'stock_data/Stocks/aple.us.txt'
+    # filename = 'stock_data/Stocks/aple.us.txt'
+    # filename = 'stock_data/NASDAQ_AAPL.txt'
+    filename = 'stock_data/AAPL.csv'
+    # data, y, stream, headers = get_data(filename, initial_size=300, predict_dist=2)
     data, y, stream, headers = get_data(filename, initial_size=300)
 
-    print headers
-    print y[0]
+    # print headers
+    # print y[0]
     print data[0]
     print stream.next()
     print stream.next()
